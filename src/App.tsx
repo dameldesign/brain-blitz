@@ -1,34 +1,47 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import StartScreen from './components/screens/StartScreen'
+import GameScreen from './components/screens/GameScreen'
+import ResultsScreen from './components/screens/ResultsScreen'
+import { QuizSettings, QuizResult } from './types/quiz'
+
+export type Screen = 'start' | 'game' | 'results'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentScreen, setCurrentScreen] = useState<Screen>('start')
+  const [quizSettings, setQuizSettings] = useState<QuizSettings | null>(null)
+  const [quizResult, setQuizResult] = useState<QuizResult | null>(null)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {currentScreen === 'start' && (
+          <StartScreen 
+            onStart={(settings) => {
+              setQuizSettings(settings)
+              setCurrentScreen('game')
+            }} 
+          />
+        )}
+        
+        {currentScreen === 'game' && quizSettings && (
+          <GameScreen 
+            settings={quizSettings}
+            onComplete={(result) => {
+              setQuizResult(result)
+              setCurrentScreen('results')
+            }}
+          />
+        )}
+        
+        {currentScreen === 'results' && quizResult && (
+          <ResultsScreen 
+            result={quizResult}
+            onPlayAgain={() => setCurrentScreen('game')}
+            onNewQuiz={() => setCurrentScreen('start')}
+          />
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   )
 }
 
