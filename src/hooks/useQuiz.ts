@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
+import { type QuizQuestion, type QuizResult, type ApiError, type QuizSettings } from '../types/quiz'
 import { fetchQuizQuestions } from '../utils/api'
-import { QuizQuestion, QuizResult } from '../types/quiz'
 
-export const useQuiz = (settings: { category: string; difficulty: string; amount: number }) => {
+export const useQuiz = (settings: QuizSettings) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<ApiError | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [score, setScore] = useState(0)
+  const [startTime, setStartTime] = useState<number | null>(null)
   
-  const loadQuestions = async () => {
+  const loadQuestions = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -17,35 +18,51 @@ export const useQuiz = (settings: { category: string; difficulty: string; amount
       setQuestions(fetchedQuestions)
       setCurrentIndex(0)
       setScore(0)
+      setStartTime(Date.now())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load questions')
+      setError({
+        message: err instanceof Error ? err.message : 'Failed to load questions',
+        isTimeout: err instanceof Error && err.message.includes('timeout')
+      })
     } finally {
       setLoading(false)
     }
-  }
+  }, [settings])
   
-  const nextQuestion = () => {
+  const nextQuestion = useCallback(() => {
     setCurrentIndex(prev => prev + 1)
-  }
+  }, [])
   
-  const incrementScore = () => {
+  const incrementScore = useCallback(() => {
     setScore(prev => prev + 1)
-  }
+  }, [])
   
-  const getResult = (): QuizResult => {
+  const getResult = useCallback((): QuizResult => {
     const totalQuestions = questions.length
     const correctAnswers = score
     const incorrectAnswers = totalQuestions - correctAnswers
     const percentage = Math.round((correctAnswers / totalQuestions) * 100)
+    const endTime = Date.now()
+    const timeTaken = startTime ? Math.round((endTime - startTime) / 1000) : 0
     
     return {
       score,
       totalQuestions,
       correctAnswers,
       incorrectAnswers,
-      percentage
+      percentage,
+      timeTaken,
+      date: new Date().toISOString()
     }
-  }
+  }, [questions.length, score, startTime])
+  
+  const resetQuiz = useCallback(() => {
+    setQuestions([])
+    setCurrentIndex(0)
+    setScore(0)
+    setError(null)
+    setStartTime(null)
+  }, [])
   
   return {
     questions,
@@ -55,9 +72,11 @@ export const useQuiz = (settings: { category: string; difficulty: string; amount
     currentQuestion: questions[currentIndex],
     score,
     isLastQuestion: currentIndex >= questions.length - 1,
+    isQuizStarted: questions.length > 0,
     loadQuestions,
     nextQuestion,
     incrementScore,
-    getResult
+    getResult,
+    resetQuiz
   }
 }

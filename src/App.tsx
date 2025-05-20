@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import type { QuizResult, QuizSettings } from './types/quiz'
 import StartScreen from './components/screens/StartScreen'
 import GameScreen from './components/screens/GameScreen'
 import ResultsScreen from './components/screens/ResultsScreen'
-import { QuizSettings, QuizResult } from './types/quiz'
+import "./App.css";
+import "./index.css";
+
 
 export type Screen = 'start' | 'game' | 'results'
 
@@ -34,7 +37,7 @@ function App() {
         )}
         
         {currentScreen === 'results' && quizResult && (
-          <ResultsScreen 
+          <ResultsScreen
             result={quizResult}
             onPlayAgain={() => setCurrentScreen('game')}
             onNewQuiz={() => setCurrentScreen('start')}
